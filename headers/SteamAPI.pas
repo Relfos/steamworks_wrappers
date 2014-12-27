@@ -2,7 +2,7 @@ Unit SteamAPI;
 
 Interface
 
-{$IFDEF FPC} {$MODE DELPHI} {$ENDIF}
+{$I terra.inc}
 
 Const
 {$IFDEF MSWINDOWS}
@@ -1796,4 +1796,4 @@ Function ISteamUtils_IsSteamRunningInVR():Boolean; CDecl; External SteamWrapperN
 Implementation
 
 
-End.
+End.

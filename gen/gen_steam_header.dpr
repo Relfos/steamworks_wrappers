@@ -502,10 +502,10 @@ Var
   S, Ext:AnsiString;
   I:Integer;
 Begin
-  Ext := ' CDecl; External SteamWrapperName';
+  Ext := ' CDecl';
 
-  If (Func.EntryPoint<>Func.Name) Then
-    Ext := Ext +' Name '''+Func.EntryPoint+'''';
+  {If (Func.EntryPoint<>Func.Name) Then
+    Ext := Ext +' Name '''+Func.EntryPoint+'''';}
 
   Ext := Ext  + ';';
 
@@ -514,7 +514,7 @@ Begin
   Else
     S := 'Function';
 
-  S := S +' ' +Func.Name +'(';
+  S := '  ' +Func.Name + ': ' + S +'(';
 
   S := S + GetArgList(Func);
 
@@ -641,6 +641,7 @@ Begin
   Lines := Copy(Lines, I + Length(Tag), MaxInt);
 
   Dest.WriteLine('// '+RegionName);
+  Dest.WriteLine('Var');
   While ReadNextDecl(S, Func) Do
   Begin
     ExportFuncDecl(Dest, Func);
@@ -751,7 +752,7 @@ Begin
   UnitInterface.WriteLine('  SteamWrapperName = ''CSteamworks.dll'';');
   UnitInterface.WriteLine('{$ENDIF}');
   UnitInterface.WriteLine();
-  UnitInterface.WriteLine('{$IFDEF OSX}');
+  UnitInterface.WriteLine('{$IFDEF DARWIN}');
   UnitInterface.WriteLine('  SteamWrapperName = ''libsteam_api.dylib'';');
   UnitInterface.WriteLine('{$ENDIF}');
   UnitInterface.WriteLine();
@@ -806,42 +807,6 @@ Begin
   UnitInterface.WriteLine('  SteamAPI_CheckCallbackRegistered = Procedure(iCallbackNum:Integer); Cdecl; ');
   UnitInterface.WriteLine();
 
-(*  UnitInterface.WriteLine('  SteamControllerState = Packed Record');
-  UnitInterface.WriteLine('    // If packet num matches that on your prior call, then the controller state hasn''t been changed since');
-  UnitInterface.WriteLine('    // your last call and there is no need to process it');
-  UnitInterface.WriteLine('    unPacketNum:Cardinal;');
-  UnitInterface.WriteLine('    // bit flags for each of the buttons');
-  UnitInterface.WriteLine('    ulButtons:UInt64;');
-  UnitInterface.WriteLine('    // Left pad coordinates');
-  UnitInterface.WriteLine('    sLeftPadX:SmallInt;');
-  UnitInterface.WriteLine('    sLeftPadY:SmallInt;');
-  UnitInterface.WriteLine('    // Right pad coordinates');
-  UnitInterface.WriteLine('    sRightPadX:SmallInt;');
-  UnitInterface.WriteLine('    sRightPadY:SmallInt;');
-	UnitInterface.WriteLine('  End;');
-  UnitInterface.WriteLine();
-
-  UnitInterface.WriteLine('  SteamFriendGameInfo = Packed Record');
-  UnitInterface.WriteLine('    gameID:SteamGameID;');
-  UnitInterface.WriteLine('    gameIP:Cardinal;');
-  UnitInterface.WriteLine('    GamePort:Word;');
-  UnitInterface.WriteLine('    QueryPort:Word;');
-  UnitInterface.WriteLine('    steamIDLobby:SteamID;');
-	UnitInterface.WriteLine('  End;');
-	UnitInterface.WriteLine();
-
-	UnitInterface.WriteLine('  SteamP2PSessionState = Packed Record');
-  UnitInterface.WriteLine('    ConnectionActive:Boolean;		// true if we''ve got an active open connection');
-  UnitInterface.WriteLine('    Connecting:Boolean;			// true if we''re currently trying to establish a connection');
-  UnitInterface.WriteLine('    P2PSessionError:Byte;		// last error recorded (see enum above)');
-  UnitInterface.WriteLine('    UsingRelay:Boolean;			// true if it''s going through a relay server (TURN)');
-  UnitInterface.WriteLine('    BytesQueuedForSend:Integer;');
-  UnitInterface.WriteLine('    PacketsQueuedForSend:Integer;');
-  UnitInterface.WriteLine('    RemoteIP:Cardinal;				// potential IP:Port of remote host. Could be TURN server.');
-  UnitInterface.WriteLine('    RemotePort:Word;			// Only exists for compatibility with older authentication api''s');
-  UnitInterface.WriteLine('  End;');*)
-
-
   Tag := '#region ';
 
   Repeat
@@ -853,9 +818,41 @@ Begin
     ExportRegion(Lines, UnitInterface);
   Until False;
 
+  UnitInterface.WriteLine('Function LoadSteamAPI():Boolean;');
+  UnitInterface.WriteLine();
+
   {UnitInterface.WriteLine('Type');
   GenClass('SteamFriends');
   UnitInterface.WriteLine();}
+
+
+  UnitImplementation.WriteLine();
+  UnitImplementation.WriteLine('Var');
+  UnitImplementation.WriteLine('  SteamHandle:{$IFDEF MSWINDOWS}THandle{$ELSE}TLibHandle{$ENDIF};');
+  UnitImplementation.WriteLine();
+  UnitImplementation.WriteLine('Function LoadSteamAPI():Boolean; ');
+  UnitImplementation.WriteLine('Begin');
+  UnitImplementation.WriteLine('  If SteamHandle<>0 Then');
+  UnitImplementation.WriteLine('  Begin');
+  UnitImplementation.WriteLine('    Result := True;');
+  UnitImplementation.WriteLine('    Exit;');
+  UnitImplementation.WriteLine('  End;');
+  UnitImplementation.WriteLine();
+  UnitImplementation.WriteLine('  SteamHandle := LoadLibrary(PAnsiChar(SteamWrapperName));');
+  UnitImplementation.WriteLine('  If SteamHandle=0 Then');
+  UnitImplementation.WriteLine('  Begin');
+  UnitImplementation.WriteLine('    Result := False;');
+  UnitImplementation.WriteLine('    Exit;');
+  UnitImplementation.WriteLine('   End;');
+  UnitImplementation.WriteLine();
+
+
+  For I:=0 To Pred(FuncCount) Do
+    UnitImplementation.WriteLine('  '+Funcs[I].Name+' := GetProcAddress(SteamHandle, ''' +Funcs[I].EntryPoint+ ''');');
+
+  UnitImplementation.WriteLine();
+  UnitImplementation.WriteLine('  Result := True;');
+  UnitImplementation.WriteLine('End;');
 
 
   UnitInterface.Truncate();
@@ -868,6 +865,9 @@ Begin
   Output.WriteLine('{$IFDEF FPC} {$MODE DELPHI} {$ENDIF}');
   Output.WriteLine();
   Output.WriteLine('Interface');
+
+  Output.WriteLine('Uses {$IFDEF MSWINDOWS}Windows{$ELSE}DynLibs{$ENDIF};');
+
   UnitInterface.Seek(0);
   UnitInterface.Copy(Output);
   Output.WriteLine();

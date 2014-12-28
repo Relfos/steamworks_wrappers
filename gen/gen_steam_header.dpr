@@ -2,53 +2,12 @@ Program gensteamheader;
 
 {$APPTYPE CONSOLE}
 
-Uses TERRA_Utils, TERRA_IO, TERRA_FileIO, TERRA_OS;
+Uses SteamworksProcessor, TERRA_IO, TERRA_FileIO;
 
 Const
   UnitName = 'SteamAPI';
 
-Type
-  ArgDecl = Record
-    IsVar:Boolean;
-    Name:AnsiString;
-    InitVal:AnsiString;
-    ArgType:AnsiString;
-  End;
-
-  FunctionDecl = Record
-    Name:AnsiString;
-    EntryPoint:AnsiString;
-    ReturnType:AnsiString;
-    Args:Array Of ArgDecl;
-    ArgCount:Integer;
-  End;
-
-  EnumDecl = Record
-    Name:AnsiString;
-    Value:AnsiString;
-    Comment:AnsiString;
-  End;
-
-  FieldDecl = Record
-    Name:AnsiString;
-    FieldType:AnsiString;
-    Comment:AnsiString;
-    Count:AnsiString;
-  End;
-
-  ConstDecl = Record
-    Name:AnsiString;
-    ConstType:AnsiString;
-    Value:AnsiString;
-  End;
-
 Var
-  Consts:Array Of ConstDecl;
-  ConstCount:Integer;
-
-  Funcs:Array Of FunctionDecl;
-  FuncCount:Integer;
-
   UnitInterface:Stream;
   UnitImplementation:Stream;
 
@@ -152,7 +111,7 @@ Begin
     Result := Name;
 End;
 
-Procedure GenConsts(Dest:Stream; Const SrcName:AnsiString);
+(*Procedure GenConsts(Dest:Stream; Const SrcName:AnsiString);
 Var
   Tag, Lines:AnsiString;
   S, S2, S3:AnsiString;
@@ -475,7 +434,7 @@ Begin
 
     I := Pos(Tag, Lines);
   End;
-End;
+End;*)
 
 Function GetArgList(Const Func:FunctionDecl):AnsiString;
 Var
@@ -497,7 +456,7 @@ Begin
   Result := S;
 End;
 
-Procedure ExportFuncDecl(Dest:Stream; Const Func:FunctionDecl);
+(*Procedure ExportFuncDecl(Dest:Stream; Const Func:FunctionDecl);
 Var
   S, Ext:AnsiString;
   I:Integer;
@@ -532,93 +491,10 @@ Begin
   Funcs[Pred(FuncCount)] := Func;
 
   Dest.WriteLine(S);
-End;
+End;*)
 
-Function ReadNextDecl(Var Lines:AnsiString; Var Func:FunctionDecl):Boolean;
-Var
-  S, S2, S3, Tag:AnsiString;
-  I,J,K:Integer;
-Begin
-  Tag := 'EntryPoint = "';
-  I := Pos(Tag, Lines);
-  If I<=0 Then
-  Begin
-    Func.EntryPoint := '';
-  End Else
-  Begin
-    Lines := Copy(Lines, I + Length(Tag), MaxInt);
-    Func.EntryPoint := GetNextWord(Lines, '"');
-  End;
 
-  Tag := 'public static extern ';
-  I := Pos(Tag, Lines);
-  If I<=0 Then
-  Begin
-    Result := False;
-    Exit;
-  End;
-
-  Lines := Copy(Lines, I + Length(Tag), MaxInt);
-  I := Pos(';', Lines);
-  If I<=0 Then
-  Begin
-    S := Lines;
-    Lines := '';
-  End Else
-  Begin
-    S := Copy(Lines, 1, Pred(I));
-    Lines := Copy(Lines, I, MaxInt);
-  End;
-
-  Func.ReturnType := GetNextWord(S, ' ');
-  Func.Name := GetNextWord(S, '(');
-
-  If Func.EntryPoint='' Then
-    Func.EntryPoint := Func.Name;
-
-  I := Pos('[MarshalAs', S);
-  While (I>0) Do
-  Begin
-    S2 := Copy(S, 1, Pred(I));
-    S := Copy(S, I+5, MaxInt);
-    GetNextWord(S, ']');
-    S := S2+' '+S;
-    I := Pos('[MarshalAs', S);
-  End;
-
-  S2 := GetNextWord(S, ')');
-
-  Func.ArgCount := 0;
-  While S2<>'' Do
-  Begin
-    S3 := GetNextWord(S2, ',');
-    Inc(Func.ArgCount);
-    SetLength(Func.Args, Func.ArgCount);
-
-    Func.Args[Pred(Func.ArgCount)].ArgType := GetNextWord(S3, ' ');
-
-    Func.Args[Pred(Func.ArgCount)].IsVar := (Func.Args[Pred(Func.ArgCount)].ArgType='out');
-    If (Func.Args[Pred(Func.ArgCount)].IsVar) Then
-      Func.Args[Pred(Func.ArgCount)].ArgType := GetNextWord(S3, ' ');
-
-    Func.Args[Pred(Func.ArgCount)].Name := TrimLeft(TrimRight(GetNextWord(S3, '=')));
-
-    If Pos('"', S3)>0 Then
-      S3 := '';
-
-    //ReplaceText('"', '''', S3);
-
-    Func.Args[Pred(Func.ArgCount)].InitVal := S3;
-  End;
-
-  Func.ReturnType := ConvertType(TrimLeft(TrimRight(Func.ReturnType)));
-
-  If (Func.ArgCount=0) And (Pos('_', Func.Name)<=0) And (Func.ReturnType='Pointer') Then
-    Func.Name := 'Get'+Func.Name;
-
-  Result := True;
-End;
-
+(*
 Procedure ExportRegion(Var Lines:AnsiString; Dest:Stream);
 Var
   Tag:AnsiString;
@@ -648,8 +524,9 @@ Begin
   End;
   Dest.WriteLine();
 End;
+*)
 
-Procedure GenClass(Name:AnsiString);
+(*Procedure GenClass(Name:AnsiString);
 Var
   Dest:Stream;
   S, S2:AnsiString;
@@ -695,7 +572,7 @@ Begin
 
   End;
   Dest.WriteLine('  End;');
-End;
+End;*)
 
 Procedure DeclareType(Dest:Stream; Name, TType:AnsiString);
 Begin
@@ -708,39 +585,7 @@ Begin
   Dest.WriteLine('  '+Name+' = Integer;');
 End;
 
-Var
-  Src, Output:Stream;
-  Tag, Tag2, Lines, S, S2, Def:AnsiString;
-  I,J:Integer;
 Begin
-  Src := MemoryStream.Create('NativeMethods.cs');
-  Src.ReadLines(Lines);
-  Src.Destroy;
-
-  Tag := '#if ';
-  Tag2 := '#endif';
-  I := Pos(Tag, Lines);
-  While I>0 Do
-  Begin
-    S := Copy(Lines, 1, Pred(I));
-    Lines := Copy(Lines, I+Length(Tag), MaxInt);
-
-    I := Pos(CrLf, Lines);
-    J := Pos(' ', Lines);
-
-    If (J>0) And ((J<I) Or (I<=0)) Then
-      I := J;
-
-    Def := Copy(Lines, 1, Pred(I));
-    Lines := Copy(Lines, Succ(I), MaxInt);
-
-
-    I := Pos(Tag2, Lines);
-    Lines := Copy(Lines, I+Length(Tag2), MaxInt);
-
-    Lines := S + CrLf + Lines;
-    I := Pos(Tag, Lines);
-  End;
 
   UnitInterface := MemoryStream.Create(1024);
   UnitImplementation := MemoryStream.Create(1024);
@@ -753,7 +598,7 @@ Begin
   UnitInterface.WriteLine('{$ENDIF}');
   UnitInterface.WriteLine();
   UnitInterface.WriteLine('{$IFDEF DARWIN}');
-  UnitInterface.WriteLine('  SteamWrapperName = ''libsteam_api.dylib'';');
+  UnitInterface.WriteLine('  SteamWrapperName = ''CSteamworks.bundle/Contents/MacOS/CSteamworks'';');
   UnitInterface.WriteLine('{$ENDIF}');
   UnitInterface.WriteLine();
   UnitInterface.WriteLine('{$IFDEF LINUX}');

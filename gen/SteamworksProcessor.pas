@@ -1,7 +1,7 @@
 Unit SteamworksProcessor;
 
 {$IFDEF FPC}
-{$mode DELPHI}
+{$MODE DELPHI}
 {$ENDIF}
 
 Interface
@@ -104,7 +104,7 @@ Type
 
 Implementation
 
-Uses TERRA_Utils, TERRA_IO, TERRA_FileIO, TERRA_OS;
+Uses SysUtils, GenUtilities;
 
 Function IsPointer(Const TypeName:AnsiString):Boolean;
 Begin
@@ -126,7 +126,7 @@ Begin
   LoadEnums('SteamEnums.cs');
   LoadStructs('SteamStructs.cs');
 
-  Src := MemoryStream.Create('NativeMethods.cs');
+  Src := Stream.Create('NativeMethods.cs');
   Src.ReadLines(Lines);
   Src.Destroy;
 
@@ -175,7 +175,7 @@ Var
   I,J:Integer;
   ConstType,Name, Value:AnsiString;
 Begin
-  Src := MemoryStream.Create(SrcName);
+  Src := Stream.Create(SrcName);
   Src.ReadLines(Lines);
   Src.Destroy;
 
@@ -191,7 +191,7 @@ Begin
 
     Inc(ConstCount);
     SetLength(Consts, ConstCount);
-    Consts[Pred(ConstCount)].Name := Name;
+    Consts[Pred(ConstCount)].Name := TrimLeft(TrimRight(Name));
     Consts[Pred(ConstCount)].ConstType := ConstType;
     Consts[Pred(ConstCount)].Value := Value;
 
@@ -209,7 +209,7 @@ Var
   CurrentEnum:EnumDecl;
   CurrentDecl:EnumFieldDecl;
 Begin
-  Src := MemoryStream.Create(SrcName);
+  Src := Stream.Create(SrcName);
   Src.ReadLines(Lines);
   Src.Destroy;
 
@@ -248,6 +248,9 @@ Begin
         I := Pos(CrLf, S);
         S2 := Copy(S, 1, Pred(I));
         S := Copy(S, Succ(I), MaxInt);
+
+        S2 := TrimLeft(S2);
+        GetNextWord(S2, ' ');
 
         If Assigned(CurrentDecl) Then
           CurrentDecl.Comment := S2;
@@ -303,7 +306,7 @@ Var
   Struct:StructDecl;
   CurrentField:StructFieldDecl;
 Begin
-  Src := MemoryStream.Create(SrcName);
+  Src := Stream.Create(SrcName);
   Src.ReadLines(Lines);
   Src.Destroy;
 
@@ -356,6 +359,9 @@ Begin
         I := Pos(CrLf, S);
         S2 := Copy(S, 1, Pred(I));
         S := Copy(S, Succ(I), MaxInt);
+
+        S2 := TrimLeft(S2);
+        GetNextWord(S2, ' ');
 
         If Assigned(CurrentField) Then
           CurrentField.Comment := S2;
@@ -418,7 +424,13 @@ Begin
           NextCount := '';
 
           If CurrentField.Name[2] = '_' Then
-            CurrentField.Name := Copy(CurrentField.Name, 4, MaxInt);
+          Begin
+            ReplaceText('m_un', '', CurrentField.Name);
+            ReplaceText('m_us', '', CurrentField.Name);
+
+            ReplaceText('m_', '', CurrentField.Name);
+          End;
+
         End;
 
       End;

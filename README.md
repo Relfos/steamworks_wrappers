@@ -21,10 +21,10 @@ For instructions how to compile them yourself check the [Steamworks.NET](https:/
 Adding new languages
 -----
 
-If you want to make bindings for other languages you'll need a Object Pascal compiler (eg: [FPC](http://www.freepascal.org).
-Check out the test_demo program that shows how to walk through all Steamworks structs/enums/consts/functions.
-From them, you have to output the declarations you need for your language, converting the types to your language equivalents, etc.
-For a more complex example, check the gen_delphi_steam_unit program.
+If you want to make bindings for other languages you'll need a Object Pascal compiler (eg: [FPC](http://www.freepascal.org)).  
+Check out the test_demo program that shows how to walk through all Steamworks structs/enums/consts/functions.  
+From them, you have to output the declarations you need for your language, converting the types to your language equivalents, etc.  
+For a more complex example, check the gen_delphi_steam_unit program.  
 
 TODO
 ---------------------------------

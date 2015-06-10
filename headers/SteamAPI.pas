@@ -15,7 +15,7 @@ Const
 {$ENDIF}
 
 {$IFDEF LINUX}
-  SteamWrapperName = 'libsteam_api.so';
+  SteamWrapperName = 'libCSteamworks.so';
 {$ENDIF}
 
 Type
@@ -840,9 +840,7 @@ Type
 		SteamMarketingMessageFlagsPlatformWindows = 1 Shl 1,
 		SteamMarketingMessageFlagsPlatformMac = 1 Shl 2,
 		SteamMarketingMessageFlagsPlatformLinux = 1 Shl 3,	// flags
-		SteamMarketingMessageFlagsPlatformRestrictions = SteamMarketingMessageFlagsPlatformWindows Or
-		SteamMarketingMessageFlagsPlatformMac Or
-		SteamMarketingMessageFlagsPlatformLinux
+		SteamMarketingMessageFlagsPlatformRestrictions = $FFFF
 	);
 	SteamNotificationPosition = (
 		SteamPositionTopLeft = 0,
@@ -1775,7 +1773,7 @@ Begin
     Exit;
   End;
 
-  SteamHandle := LoadLibrary(PAnsiChar(SteamWrapperName));
+  SteamHandle := LoadLibrary(SteamWrapperName);
   If SteamHandle=0 Then
   Begin
     Result := False;
@@ -2448,4 +2446,4 @@ Begin
 End;
 
 
-End.
+End.

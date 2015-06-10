@@ -9,15 +9,15 @@ Interface
 Type
   FunctionArgumentDecl = Class
     IsVar:Boolean;
-    Name:AnsiString;
-    InitVal:AnsiString;
-    ArgumentType:AnsiString;
+    Name:TERRAString;
+    InitVal:TERRAString;
+    ArgumentType:TERRAString;
   End;
 
   FunctionDecl = Class
-    Name:AnsiString;
-    EntryPoint:AnsiString;
-    ReturnType:AnsiString;
+    Name:TERRAString;
+    EntryPoint:TERRAString;
+    ReturnType:TERRAString;
 
     Arguments:Array Of FunctionArgumentDecl;
     ArgumentCount:Integer;
@@ -26,62 +26,62 @@ Type
   End;
 
   EnumFieldDecl = Class
-    Name:AnsiString;
-    Value:AnsiString;
-    Comment:AnsiString;
+    Name:TERRAString;
+    Value:TERRAString;
+    Comment:TERRAString;
   End;
 
   EnumDecl = Class
-    Name:AnsiString;
+    Name:TERRAString;
     Decls:Array Of EnumFieldDecl;
     DeclCount:Integer;
 
-    Constructor Create(Const Name:AnsiString);
+    Constructor Create(Const Name:TERRAString);
     Function AddDecl():EnumFieldDecl;
   End;
 
   StructFieldDecl = Class
-    Name:AnsiString;
-    FieldType:AnsiString;
-    Comment:AnsiString;
-    Count:AnsiString;
+    Name:TERRAString;
+    FieldType:TERRAString;
+    Comment:TERRAString;
+    Count:TERRAString;
   End;
 
   StructDecl = Class
     Public
-      Name:AnsiString;
+      Name:TERRAString;
       Fields:Array Of StructFieldDecl;
       FieldCount:Integer;
 
-      Constructor Create(Const Name:AnsiString);
+      Constructor Create(Const Name:TERRAString);
       Function AddField():StructFieldDecl;
   End;
 
   ConstDecl = Record
-    Name:AnsiString;
-    ConstType:AnsiString;
-    Value:AnsiString;
+    Name:TERRAString;
+    ConstType:TERRAString;
+    Value:TERRAString;
   End;
 
   RegionDecl = Class
-    Name:AnsiString;
+    Name:TERRAString;
 
     Functions:Array Of FunctionDecl;
     FunctionCount:Integer;
 
-    Constructor Create(Const Name:AnsiString);
+    Constructor Create(Const Name:TERRAString);
     Procedure AddFunction(Func:FunctionDecl);
   End;
 
   SteamDeclarations = Class
     Protected
-      Procedure LoadConsts(Const SrcName:AnsiString);
-      Procedure LoadEnums(Const SrcName:AnsiString);
-      Procedure LoadStructs(Const SrcName:AnsiString);
+      Procedure LoadConsts(Const SrcName:TERRAString);
+      Procedure LoadEnums(Const SrcName:TERRAString);
+      Procedure LoadStructs(Const SrcName:TERRAString);
 
-      Procedure LoadRegion(Var Lines:AnsiString);
+      Procedure LoadRegion(Var Lines:TERRAString);
 
-      Function ReadNextDecl(Var Lines:AnsiString):FunctionDecl;
+      Function ReadNextDecl(Var Lines:TERRAString):FunctionDecl;
 
     Public
       Consts:Array Of ConstDecl;
@@ -98,15 +98,15 @@ Type
 
       Constructor Create();
 
-      Function AddRegion(Const Name:AnsiString):RegionDecl;
-      Function AddEnum(Const Name:AnsiString):EnumDecl;
+      Function AddRegion(Const Name:TERRAString):RegionDecl;
+      Function AddEnum(Const Name:TERRAString):EnumDecl;
   End;
 
 Implementation
 
 Uses SysUtils, GenUtilities;
 
-Function IsPointer(Const TypeName:AnsiString):Boolean;
+Function IsPointer(Const TypeName:TERRAString):Boolean;
 Begin
   Result := (Copy(TypeName, Length(TypeName) - 3, 3) = 'Ptr');
 End;
@@ -115,7 +115,7 @@ End;
 Constructor SteamDeclarations.Create;
 Var
   Src, Output:Stream;
-  Tag, Tag2, Lines, S, S2, Def:AnsiString;
+  Tag, Tag2, Lines, S, S2, Def:TERRAString;
   I,J:Integer;
 Begin
   ConstCount := 0;
@@ -128,7 +128,7 @@ Begin
 
   Src := Stream.Create('NativeMethods.cs');
   Src.ReadLines(Lines);
-  Src.Destroy;
+  Src.Release;
 
   Tag := '#if ';
   Tag2 := '#endif';
@@ -167,17 +167,17 @@ Begin
 End;
 
 
-Procedure SteamDeclarations.LoadConsts(Const SrcName:AnsiString);
+Procedure SteamDeclarations.LoadConsts(Const SrcName:TERRAString);
 Var
-  Tag, Lines:AnsiString;
-  S, S2, S3:AnsiString;
+  Tag, Lines:TERRAString;
+  S, S2, S3:TERRAString;
   Src:Stream;
   I,J:Integer;
-  ConstType,Name, Value:AnsiString;
+  ConstType,Name, Value:TERRAString;
 Begin
   Src := Stream.Create(SrcName);
   Src.ReadLines(Lines);
-  Src.Destroy;
+  Src.Release;
 
   Tag := 'public const ';
   I := Pos(Tag, Lines);
@@ -185,9 +185,9 @@ Begin
   Begin
     Lines := Copy(Lines, I + Length(Tag), MaxInt);
 
-    ConstType := TrimLeft(TrimRight(GetNextWord(Lines, ' ')));
-    Name := GetNextWord(Lines, '=');
-    Value := GetNextWord(Lines, ';');
+    ConstType := TrimLeft(TrimRight(StringExtractNextWord(Lines, ' ')));
+    Name := StringExtractNextWord(Lines, '=');
+    Value := StringExtractNextWord(Lines, ';');
 
     Inc(ConstCount);
     SetLength(Consts, ConstCount);
@@ -199,10 +199,10 @@ Begin
   End;
 End;
 
-Procedure SteamDeclarations.LoadEnums(Const SrcName:AnsiString);
+Procedure SteamDeclarations.LoadEnums(Const SrcName:TERRAString);
 Var
-  Tag, Lines:AnsiString;
-  S, S2, S3:AnsiString;
+  Tag, Lines:TERRAString;
+  S, S2, S3:TERRAString;
   Src:Stream;
   I,J:Integer;
 
@@ -211,7 +211,7 @@ Var
 Begin
   Src := Stream.Create(SrcName);
   Src.ReadLines(Lines);
-  Src.Destroy;
+  Src.Release;
 
   CurrentEnum := Nil;
 
@@ -221,7 +221,7 @@ Begin
   Begin
     Lines := Copy(Lines, I + Length(Tag), MaxInt);
 
-    S := GetNextWord(Lines, ' ');
+    S := StringExtractNextWord(Lines, ' ');
     If S[1] = 'E' Then
       S := Copy(S, 2, MaxInt);
 
@@ -234,7 +234,7 @@ Begin
     CurrentEnum := Self.AddEnum(S);
     CurrentDecl := Nil;
 
-    GetNextWord(Lines, '{');
+    StringExtractNextWord(Lines, '{');
     I := Pos('}', Lines);
     S := Copy(Lines, 1, Pred(I));
     Lines := Copy(Lines, I + 1, MaxInt);
@@ -250,7 +250,7 @@ Begin
         S := Copy(S, Succ(I), MaxInt);
 
         S2 := TrimLeft(S2);
-        GetNextWord(S2, ' ');
+        StringExtractNextWord(S2, ' ');
 
         If Assigned(CurrentDecl) Then
           CurrentDecl.Comment := S2;
@@ -273,7 +273,7 @@ Begin
           S := TrimLeft(Copy(S, Succ(I), MaxInt));
         End;
 
-        S3 := GetNextWord(S2, '=');
+        S3 := StringExtractNextWord(S2, '=');
 
         ReplaceText('k_E', 'Steam', S3);
         ReplaceText('k_E', 'Steam', S2);
@@ -295,20 +295,20 @@ Begin
 End;
 
 
-Procedure SteamDeclarations.LoadStructs(Const SrcName:AnsiString);
+Procedure SteamDeclarations.LoadStructs(Const SrcName:TERRAString);
 Var
-  Tag, Lines:AnsiString;
-  S, S2, S3:AnsiString;
+  Tag, Lines:TERRAString;
+  S, S2, S3:TERRAString;
   Src:Stream;
   I,J,K,W:Integer;
-  NextCount:AnsiString;
+  NextCount:TERRAString;
 
   Struct:StructDecl;
   CurrentField:StructFieldDecl;
 Begin
   Src := Stream.Create(SrcName);
   Src.ReadLines(Lines);
-  Src.Destroy;
+  Src.Release;
 
   Tag := 'public struct ';
   I := Pos(Tag, Lines);
@@ -316,7 +316,7 @@ Begin
   Begin
     Lines := Copy(Lines, I + Length(Tag), MaxInt);
 
-    S := GetNextWord(Lines, ' ');
+    S := StringExtractNextWord(Lines, ' ');
     If Pos('_t', S)>Length(S)-2 Then
       S := Copy(S, 1,  Length(S)-2);
 
@@ -333,7 +333,7 @@ Begin
     Structs[Pred(StructCount)] := Struct;
     CurrentField := Nil;
 
-    GetNextWord(Lines, '{');
+    StringExtractNextWord(Lines, '{');
     I := Pos(Tag, Lines);
     If I<=0 Then
     Begin
@@ -361,7 +361,7 @@ Begin
         S := Copy(S, Succ(I), MaxInt);
 
         S2 := TrimLeft(S2);
-        GetNextWord(S2, ' ');
+        StringExtractNextWord(S2, ' ');
 
         If Assigned(CurrentField) Then
           CurrentField.Comment := S2;
@@ -404,22 +404,22 @@ Begin
         Begin
           If Pos('ByValTStr', S2)>0 Then
           Begin
-            GetNextWord(S2, '=');
-            NextCount := GetNextWord(S2, ')');
+            StringExtractNextWord(S2, '=');
+            NextCount := StringExtractNextWord(S2, ')');
 
             ReplaceText('Constants.', '', NextCount);
           End;
         End Else
         If Pos('{',S2)>0 Then
         Begin
-          GetNextWord(S, '}');
+          StringExtractNextWord(S, '}');
         End Else
         Begin
-          GetNextWord(S2, ' '); // public
+          StringExtractNextWord(S2, ' '); // public
 
           CurrentField := Struct.AddField();
-          CurrentField.FieldType := TrimRight(TrimLeft(GetNextWord(S2, ' '))); // get type
-          CurrentField.Name := TrimRight(TrimLeft(GetNextWord(S2, ';'))); // get name
+          CurrentField.FieldType := TrimRight(TrimLeft(StringExtractNextWord(S2, ' '))); // get type
+          CurrentField.Name := TrimRight(TrimLeft(StringExtractNextWord(S2, ';'))); // get name
           CurrentField.Count := NextCount;
           NextCount := '';
 
@@ -441,11 +441,11 @@ Begin
   End;
 End;
 
-Function SteamDeclarations.ReadNextDecl(Var Lines:AnsiString):FunctionDecl;
+Function SteamDeclarations.ReadNextDecl(Var Lines:TERRAString):FunctionDecl;
 Var
-  S, S2, S3, Tag:AnsiString;
+  S, S2, S3, Tag:TERRAString;
   I,J,K:Integer;
-  EntryPoint:AnsiString;
+  EntryPoint:TERRAString;
   CurrentArg:FunctionArgumentDecl;
 Begin
   Tag := 'EntryPoint = "';
@@ -456,7 +456,7 @@ Begin
   End Else
   Begin
     Lines := Copy(Lines, I + Length(Tag), MaxInt);
-    EntryPoint := GetNextWord(Lines, '"');
+    EntryPoint := StringExtractNextWord(Lines, '"');
   End;
 
   Tag := 'public static extern ';
@@ -481,8 +481,8 @@ Begin
 
   Result := FunctionDecl.Create();
 
-  Result.ReturnType := GetNextWord(S, ' ');
-  Result.Name := GetNextWord(S, '(');
+  Result.ReturnType := StringExtractNextWord(S, ' ');
+  Result.Name := StringExtractNextWord(S, '(');
 
   If EntryPoint<>'' Then
     Result.EntryPoint := EntryPoint
@@ -494,29 +494,29 @@ Begin
   Begin
     S2 := Copy(S, 1, Pred(I));
     S := Copy(S, I+5, MaxInt);
-    GetNextWord(S, ']');
+    StringExtractNextWord(S, ']');
     S := S2+' '+S;
     I := Pos('[MarshalAs', S);
   End;
 
-  S2 := GetNextWord(S, ')');
+  S2 := StringExtractNextWord(S, ')');
 
   Result.ArgumentCount := 0;
   While S2<>'' Do
   Begin
-    S3 := GetNextWord(S2, ',');
+    S3 := StringExtractNextWord(S2, ',');
 
 
     CurrentArg := Result.AddArgument();
 
-    CurrentArg.ArgumentType := GetNextWord(S3, ' ');
+    CurrentArg.ArgumentType := StringExtractNextWord(S3, ' ');
 
     CurrentArg.IsVar := (CurrentArg.ArgumentType='out');
     
     If (CurrentArg.IsVar) Then
-      CurrentArg.ArgumentType := GetNextWord(S3, ' ');
+      CurrentArg.ArgumentType := StringExtractNextWord(S3, ' ');
 
-    CurrentArg.Name := TrimLeft(TrimRight(GetNextWord(S3, '=')));
+    CurrentArg.Name := TrimLeft(TrimRight(StringExtractNextWord(S3, '=')));
 
     If Pos('"', S3)>0 Then
       S3 := '';
@@ -532,10 +532,10 @@ Begin
     Result.Name := 'Get'+Result.Name;
 End;
 
-Procedure SteamDeclarations.LoadRegion(Var Lines:AnsiString);
+Procedure SteamDeclarations.LoadRegion(Var Lines:TERRAString);
 Var
-  Tag:AnsiString;
-  S, RegionName:AnsiString;
+  Tag:TERRAString;
+  S, RegionName:TERRAString;
   I,J,K:Integer;
   Func:FunctionDecl;
   CurrentRegion:RegionDecl;
@@ -565,7 +565,7 @@ Begin
   Until False;
 End;
 
-Function SteamDeclarations.AddRegion(const Name: AnsiString):RegionDecl;
+Function SteamDeclarations.AddRegion(const Name: TERRAString):RegionDecl;
 Begin
   Result := RegionDecl.Create(Name);
 
@@ -574,7 +574,7 @@ Begin
   Regions[Pred(RegionCount)] := Result;
 End;
 
-Function SteamDeclarations.AddEnum(const Name: AnsiString): EnumDecl;
+Function SteamDeclarations.AddEnum(const Name: TERRAString): EnumDecl;
 Begin
   Result := EnumDecl.Create(Name);
 
@@ -592,7 +592,7 @@ Begin
   Fields[Pred(FieldCount)] := Result
 End;
 
-Constructor StructDecl.Create(const Name: AnsiString);
+Constructor StructDecl.Create(const Name: TERRAString);
 Begin
   Self.Name := Name;
   Self.FieldCount := 0;
@@ -609,7 +609,7 @@ Begin
 End;
 
 { RegionDecl }
-Constructor RegionDecl.Create(const Name: AnsiString);
+Constructor RegionDecl.Create(const Name: TERRAString);
 Begin
   Self.Name := Name;
   Self.FunctionCount := 0;
@@ -623,7 +623,7 @@ Begin
 End;
 
 { EnumDecl }
-Constructor EnumDecl.Create(const Name: AnsiString);
+Constructor EnumDecl.Create(const Name: TERRAString);
 Begin
   Self.Name := Name;
   Self.DeclCount := 0;

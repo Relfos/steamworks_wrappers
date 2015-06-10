@@ -23,25 +23,25 @@ Type
       Function GetEOF:Boolean;Virtual;
 
     Public
-      Constructor Create(Const FileName:AnsiString = '');
-      Destructor Destroy; Override;
+      Constructor Create(Const FileName:TERRAString = '');
+      Procedure Release; Override;
 
       Procedure SetBuffer(BufferSize:Integer; Buffer:PByte);
 
       Procedure Resize(NewSize:Integer);
 
-      Procedure ReadString(Var S:AnsiString; NullTerminated:Boolean = False);
-      Procedure ReadLine(Var S:AnsiString);
-      Procedure WriteString(S:AnsiString; NullTerminated:Boolean = False);
-      Procedure WriteLine(S:AnsiString='');
-      Procedure ReadLines(Var S:AnsiString);
+      Procedure ReadString(Var S:TERRAString; NullTerminated:Boolean = False);
+      Procedure ReadLine(Var S:TERRAString);
+      Procedure WriteString(S:TERRAString; NullTerminated:Boolean = False);
+      Procedure WriteLine(S:TERRAString='');
+      Procedure ReadLines(Var S:TERRAString);
 
       Function Read(Data:Pointer; Length:Cardinal):Cardinal;
       Function Write(Data:Pointer; Length:Cardinal):Cardinal;
       Procedure Truncate;
       Procedure Seek(NewPosition:Cardinal);
 
-      Procedure Save(Const FileName:AnsiString);
+      Procedure Save(Const FileName:TERRAString);
 
       Procedure Copy(Dest:Stream);
 
@@ -52,12 +52,12 @@ Type
       Property EOF:Boolean Read GetEOF;
     End;
 
-Function GetNextWord(Var S:AnsiString; Separator:AnsiString=' '):AnsiString;
-Procedure ReplaceText(Const Token,Value:AnsiString; Var S:AnsiString);
+Function StringExtractNextWord(Var S:TERRAString; Separator:TERRAString=' '):TERRAString;
+Procedure ReplaceText(Const Token,Value:TERRAString; Var S:TERRAString);
 
-Function IntToString(Const N:Integer):AnsiString;
+Function IntToString(Const N:Integer):TERRAString;
 
-Function UpStr(Const S:AnsiString):AnsiString;
+Function StringUpper(Const S:TERRAString):TERRAString;
 
 Implementation
 
@@ -66,24 +66,24 @@ Begin
   If A<B Then Result:=A Else Result:=B;
 End;
 
-Function IntToString(Const N:Integer):AnsiString;
+Function IntToString(Const N:Integer):TERRAString;
 Var
-  S:AnsiString;
+  S:TERRAString;
 Begin
   Str(N,S);
   Result := S;
 End;
 
-Function UpCase(Const C:AnsiChar):AnsiChar;
+Function UpCase(Const C:TERRAChar):TERRAChar;
 Begin
     If (C>='a')And(C<='z') Then
-        Result := AnsiChar(Byte(C) - 32)
+        Result := TERRAChar(Byte(C) - 32)
     Else
         Result := C;
 End;
 
 //Converts a string to upcase
-Function UpStr(Const S:AnsiString):AnsiString;
+Function StringUpper(Const S:TERRAString):TERRAString;
 Var
   I:Integer;
 Begin
@@ -92,15 +92,15 @@ Begin
     Result[I] := UpCase(Result[I]);
 End;
 
-Procedure ReplaceText(Const Token,Value:AnsiString; Var S:AnsiString);
+Procedure ReplaceText(Const Token,Value:TERRAString; Var S:TERRAString);
 Var
   I:Integer;
-  S2:AnsiString;
+  S2:TERRAString;
 Begin
   If (Token = Value) Then
     Exit;
 
-  I := Pos(Upstr(Token),Upstr(S));
+  I := Pos(StringUpper(Token),StringUpper(S));
   If (I>=1) Then
   Begin
     S2 := Copy(S,I+Length(Token),Length(S)-I);
@@ -110,7 +110,7 @@ Begin
   End;
 End;
 
-Function GetNextWord(Var S:AnsiString; Separator:AnsiString=' '):AnsiString;
+Function StringExtractNextWord(Var S:TERRAString; Separator:TERRAString=' '):TERRAString;
 Var
   I:Integer;
 Begin
@@ -135,7 +135,7 @@ Begin
 End;
 
 // Stream object
-Constructor Stream.Create(Const FileName:AnsiString);
+Constructor Stream.Create(Const FileName:TERRAString);
 Var
   F:File;
 Begin
@@ -155,7 +155,7 @@ Begin
   End;
 End;
 
-Destructor Stream.Destroy;
+Procedure Stream.Release;
 Begin
   FreeMem(_Buffer);
   _Size := 0;
@@ -320,9 +320,9 @@ Begin
   Result := (Position>=Size);
 End;
 
-Procedure Stream.ReadLines(Var S:AnsiString);
+Procedure Stream.ReadLines(Var S:TERRAString);
 Var
-  S2:AnsiString;
+  S2:TERRAString;
 Begin
   S := '';
   S2 := '';
@@ -334,10 +334,10 @@ Begin
 End;
 
 
-Procedure Stream.ReadString(Var S:AnsiString; NullTerminated:Boolean = False);
+Procedure Stream.ReadString(Var S:TERRAString; NullTerminated:Boolean = False);
 Var
 {$IFDEF OXYGENE}
-  C:AnsiChar;
+  C:TERRAChar;
   I:Integer;
 {$ENDIF}
   Len:Word;
@@ -378,13 +378,13 @@ Begin
   End;
 End;
 
-Procedure Stream.WriteString(S:AnsiString; NullTerminated:Boolean = False);
+Procedure Stream.WriteString(S:TERRAString; NullTerminated:Boolean = False);
 Var
   Len:Word;
   N:Byte;
 {$IFDEF OXYGENE}
   I:Integer;
-  C:AnsiChar;
+  C:TERRAChar;
 {$ENDIF}
 Begin
   Len := Length(S);
@@ -425,9 +425,9 @@ Begin
   End;
 End;
 
-Procedure Stream.ReadLine(Var S:AnsiString);
+Procedure Stream.ReadLine(Var S:TERRAString);
 Var
-  C:AnsiChar;
+  C:TERRAChar;
 Begin
   S:='';
   C:=#0;
@@ -440,10 +440,10 @@ Begin
   S := TrimRight(S);
 End;
 
-Procedure Stream.WriteLine(S:AnsiString);
+Procedure Stream.WriteLine(S:TERRAString);
 {$IFDEF OXYGENE}
 Var
-  C:AnsiChar;
+  C:TERRAChar;
   I:Integer;
 {$ENDIF}
 Begin
@@ -459,7 +459,7 @@ Begin
   {$ENDIF}
 End;
 
-Procedure Stream.Save(const FileName: AnsiString);
+Procedure Stream.Save(const FileName: TERRAString);
 Var
   F:File;
 Begin
